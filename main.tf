@@ -1,9 +1,5 @@
 terraform {
   required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = ">=2.62.0"
-    }
     databricks = {
       source = "databrickslabs/databricks"
       version = "0.3.7"
@@ -12,13 +8,8 @@ terraform {
 }
 
 
-data "azurerm_databricks_workspace" "this" {
-  name                = var.databricks_name
-  resource_group_name = var.resource_group_name
-}
-
 provider "databricks" {
-  azure_workspace_resource_id = data.azurerm_databricks_workspace.this.id
+  azure_workspace_resource_id = var.azurerm_databricks_workspace_id
   azure_client_id             = var.client_id
   azure_client_secret         = var.client_secret
   azure_tenant_id             = var.tenant_id
