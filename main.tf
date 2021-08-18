@@ -17,16 +17,10 @@ provider "databricks" {
 
 data "databricks_spark_version" "latest_lts" {
   long_term_support = true
-  depends_on = [
-    data.azurerm_databricks_workspace.this
-  ]
 }
 
 data "databricks_node_type" "smallest" {
   local_disk = false
-  depends_on = [
-    data.azurerm_databricks_workspace.this
-  ]
 }
 
 resource "databricks_cluster" "cluster" {
@@ -38,25 +32,16 @@ resource "databricks_cluster" "cluster" {
     min_workers = 1
     max_workers = 8
   }
-  depends_on = [
-    data.azurerm_databricks_workspace.this
-  ]
 }
 
 resource "databricks_secret_scope" "this" {
   name = "terraform"
-  depends_on = [
-    data.azurerm_databricks_workspace.this
-  ]
 }
 
 resource "databricks_secret" "this" {
   key          = "service_principal_key"
   string_value = var.client_secret
   scope        = databricks_secret_scope.this.name
-  depends_on = [
-    data.azurerm_databricks_workspace.this
-  ]
 }
 
 # Disabled due to CCoE restriction
@@ -77,7 +62,4 @@ resource "databricks_azure_adls_gen2_mount" "this" {
   client_secret_scope    = databricks_secret_scope.this.name
   client_secret_key      = databricks_secret.this.key
   initialize_file_system = true
-  depends_on = [
-    data.azurerm_databricks_workspace.this
-  ]
 }
