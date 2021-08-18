@@ -7,9 +7,6 @@ terraform {
   }
 }
 
-variable "storage_account_name" {
-  type = string
-}
 
 provider "databricks" {
   azure_workspace_resource_id = var.azurerm_databricks_workspace_id
