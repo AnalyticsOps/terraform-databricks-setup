@@ -1,5 +1,9 @@
 terraform {
   required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"
+      version = ">=2.62.0"
+    }
     databricks = {
       source = "databrickslabs/databricks"
       version = "0.3.7"
@@ -8,8 +12,13 @@ terraform {
 }
 
 
+data "azurerm_databricks_workspace" "this" {
+  name                = var.databricks_name
+  resource_group_name = var.resource_group_name
+}
+
 provider "databricks" {
-  azure_workspace_resource_id = var.azurerm_databricks_workspace_id
+  azure_workspace_resource_id = data.azurerm_databricks_workspace.this.id
   azure_client_id             = var.client_id
   azure_client_secret         = var.client_secret
   azure_tenant_id             = var.tenant_id
@@ -17,10 +26,16 @@ provider "databricks" {
 
 data "databricks_spark_version" "latest_lts" {
   long_term_support = true
+  depends_on = [
+    data.azurerm_databricks_workspace.this
+  ]
 }
 
 data "databricks_node_type" "smallest" {
   local_disk = false
+  depends_on = [
+    data.azurerm_databricks_workspace.this
+  ]
 }
 
 resource "databricks_cluster" "cluster" {
@@ -32,16 +47,25 @@ resource "databricks_cluster" "cluster" {
     min_workers = 1
     max_workers = 8
   }
+  depends_on = [
+    data.azurerm_databricks_workspace.this
+  ]
 }
 
 resource "databricks_secret_scope" "this" {
   name = "terraform"
+  depends_on = [
+    data.azurerm_databricks_workspace.this
+  ]
 }
 
 resource "databricks_secret" "this" {
   key          = "service_principal_key"
   string_value = var.client_secret
   scope        = databricks_secret_scope.this.name
+  depends_on = [
+    data.azurerm_databricks_workspace.this
+  ]
 }
 
 # Disabled due to CCoE restriction
@@ -62,4 +86,7 @@ resource "databricks_azure_adls_gen2_mount" "this" {
   client_secret_scope    = databricks_secret_scope.this.name
   client_secret_key      = databricks_secret.this.key
   initialize_file_system = true
+  depends_on = [
+    data.azurerm_databricks_workspace.this
+  ]
 }
