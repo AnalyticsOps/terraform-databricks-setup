@@ -1,8 +1,4 @@
-variable "databricks_name" {
-  type = string
-}
-
-variable "resource_group_name" {
+variable "azurerm_databricks_workspace_id" {
   type = string
 }
 
