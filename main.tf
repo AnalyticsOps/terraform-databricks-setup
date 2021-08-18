@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     databricks = {
-      source = "databrickslabs/databricks"
+      source  = "databrickslabs/databricks"
       version = "0.3.7"
     }
   }
@@ -17,10 +17,16 @@ provider "databricks" {
 
 data "databricks_spark_version" "latest_lts" {
   long_term_support = true
+  depends_on = [
+    var.azurerm_databricks_workspace_id
+  ]
 }
 
 data "databricks_node_type" "smallest" {
   local_disk = false
+  depends_on = [
+    var.azurerm_databricks_workspace_id
+  ]
 }
 
 resource "databricks_cluster" "cluster" {
@@ -36,6 +42,9 @@ resource "databricks_cluster" "cluster" {
 
 resource "databricks_secret_scope" "this" {
   name = "terraform"
+  depends_on = [
+    var.azurerm_databricks_workspace_id
+  ]
 }
 
 resource "databricks_secret" "this" {
