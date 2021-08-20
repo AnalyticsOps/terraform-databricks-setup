@@ -15,60 +15,30 @@ provider "databricks" {
   azure_tenant_id             = var.tenant_id
 }
 
-data "databricks_spark_version" "latest_lts" {
-  long_term_support = true
+resource "databricks_notebook" "ddl" {
+  content_base64 = base64encode(<<-EOT
+    config = {
+      "fs.azure.account.auth.type": "CustomAccessToken",
+      "fs.azure.account.custom.token.provider.class": spark.conf.get("spark.databricks.passthrough.adls.gen2.tokenProviderClassName")
+    }
+
+    dbutils.fs.mount(
+      source = "abfss://datasets@dpcontentstorageprod.dfs.core.windows.net",
+      mount_point = "/mnt/dataplatform",
+      extra_configs = config
+    )
+
+    dbutils.fs.mount(
+      source = "abfss://data@${var.storage_account_name}.dfs.core.windows.net",
+      mount_point = "/mnt/data",
+      extra_configs = config
+    )
+    EOT
+  )
+  path = "/Shared/Mount"
+  language = "PYTHON"
+
   depends_on = [
     var.azurerm_databricks_workspace_id
   ]
-}
-
-data "databricks_node_type" "smallest" {
-  local_disk = false
-  depends_on = [
-    var.azurerm_databricks_workspace_id
-  ]
-}
-
-resource "databricks_cluster" "cluster" {
-  cluster_name            = "default_cluster"
-  spark_version           = data.databricks_spark_version.latest_lts.id
-  node_type_id            = data.databricks_node_type.smallest.id
-  autotermination_minutes = 20
-  autoscale {
-    min_workers = 1
-    max_workers = 8
-  }
-}
-
-resource "databricks_secret_scope" "this" {
-  name = "terraform"
-  depends_on = [
-    var.azurerm_databricks_workspace_id
-  ]
-}
-
-resource "databricks_secret" "this" {
-  key          = "service_principal_key"
-  string_value = var.client_secret
-  scope        = databricks_secret_scope.this.name
-}
-
-# Disabled due to CCoE restriction
-# resource "azurerm_role_assignment" "this" {
-#   scope                = var.storage_account_id
-#   role_definition_name = "Storage Blob Data Contributor"
-#   principal_id         = data.azurerm_client_config.current.object_id
-#   depends_on = [azurerm_databricks_workspace.this]
-# }
-
-resource "databricks_azure_adls_gen2_mount" "this" {
-  cluster_id             = databricks_cluster.cluster.id
-  storage_account_name   = var.storage_account_name
-  container_name         = "trainingdata"
-  mount_name             = "data"
-  tenant_id              = var.tenant_id
-  client_id              = var.client_id
-  client_secret_scope    = databricks_secret_scope.this.name
-  client_secret_key      = databricks_secret.this.key
-  initialize_file_system = true
 }
