@@ -2,6 +2,10 @@ variable "azurerm_databricks_workspace_id" {
   type = string
 }
 
+variable "azurerm_databricks_workspace_url" {
+  type = string
+}
+
 variable "client_id" {
   type = string
 }

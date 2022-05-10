@@ -2,13 +2,14 @@ terraform {
   required_providers {
     databricks = {
       source  = "databrickslabs/databricks"
-      version = "0.3.7"
+      version = "0.5.7"
     }
   }
 }
 
 
 provider "databricks" {
+  host                        = var.azurerm_databricks_workspace_url
   azure_workspace_resource_id = var.azurerm_databricks_workspace_id
   azure_client_id             = var.client_id
   azure_client_secret         = var.client_secret
